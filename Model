@@ -1,0 +1,64 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# parameters
+# -----------------------------
+N = 200
+T = 100
+pi = 0.4
+p_signal = 0.85
+k = 30
+
+# -----------------------------
+# bayes
+# -----------------------------
+def posterior_profitable(signal, pi, p):
+    if signal == 1:
+        return (p * pi) / (p * pi + (1 - p) * (1 - pi))
+    else:
+        return ((1 - p) * pi) / ((1 - p) * pi + p * (1 - pi))
+
+# -----------------------------
+# simulation
+# -----------------------------
+bad_ratio = []
+
+for t in range(T):
+
+    true_state = np.random.binomial(1, pi, size=N)
+
+    signals = np.zeros(N)
+    for i in range(N):
+        if true_state[i] == 1:
+            signals[i] = np.random.binomial(1, p_signal)
+        else:
+            signals[i] = np.random.binomial(1, 1 - p_signal)
+
+    invest = np.zeros(N)
+    for i in range(N):
+        post = posterior_profitable(signals[i], pi, p_signal)
+        if post >= 0.5:
+            invest[i] = 1
+
+    total_investments = np.sum(invest)
+
+    if total_investments > 0:
+        bad_investments = np.sum((invest == 1) & (true_state == 0))
+        bad_ratio.append(bad_investments / total_investments)
+    else:
+        bad_ratio.append(np.nan)
+
+# -----------------------------
+# figure
+# -----------------------------
+plt.figure()
+plt.plot(bad_ratio)
+plt.xlabel("Time")
+plt.ylabel("Share of unprofitable investments")
+plt.title("Proportion of bad projects among all investments")
+plt.ylim(0, 1)
+plt.show()
+
+print("Średnia proporcja błędnych inwestycji:", np.nanmean(bad_ratio))
+print("1 - p_signal =", 1 - p_signal)
